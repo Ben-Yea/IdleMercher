@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idle Mercher</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header>
+        <h1>Idle Mercher</h1>
+        <button id="theme-toggle">Toggle Theme</button>
+    </header>
+    <main>
+        <!-- Search Box -->
+        <section id="search">
+            <h2>Pin Items</h2>
+            <form id="search-form">
+                <input type="text" id="item-name" placeholder="Item Name" list="item-suggestions" required>
+                <datalist id="item-suggestions"></datalist>
+                <select id="pin-category">
+                    <option value="buy-orders">Buy Orders</option>
+                    <option value="sell-offers">Sell Offers</option>
+                </select>
+                <button type="submit">Pin</button>
+            </form>
+        </section>
+
+        <!-- Main Content -->
+        <div id="content">
+            <!-- Table Section -->
+            <section id="market-data">
+                <div class="market-header">
+                    <h2>Market Data</h2>
+                    <div id="refresh-timer">Refreshing in: <span id="countdown">30</span>s</div>
+                </div>
+                <div class="table-container">
+                    <table id="market-table">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Lowest Sell Price</th>
+                                <th>Sell Volume</th>
+                                <th>Highest Buy Price</th>
+                                <th>Buy Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamically populated rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+
+            <!-- Pinned Items Section -->
+            <section id="pinned-items">
+                <div id="buy-orders" class="category">
+                    <h3>Buy Orders</h3>
+                    <div class="cards"></div>
+                </div>
+
+                <div id="sell-offers" class="category">
+                    <h3>Sell Offers</h3>
+                    <div class="cards"></div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+    <script src="script.js"></script>
+</body>
+
+</html>
