@@ -315,6 +315,7 @@ main {
     color: var(--accent-color);
 }
 
+/* Flashing Effect for Cards */
 @keyframes flash {
     0% {
         border-color: var(--accent-color);
@@ -330,5 +331,6 @@ main {
 }
 
 .card.flash {
-    animation: flash 0.5s ease-in-out;
+    animation: flash 1s ease-in-out;
+    /* Increased duration to 1 second */
 }

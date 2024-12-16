@@ -1,8 +1,8 @@
+
 let itemData = []; // Stores item data for suggestions and pricing
 let countdownValue = 30; // Initial countdown value in seconds
 
 // Function to fetch and update table data
-
 function formatNumber(value) {
     const num = value.replace(/,/g, ""); // Remove existing commas
     if (isNaN(num) || num === "") return ""; // Return empty string for invalid inputs
@@ -66,7 +66,6 @@ async function fetchAndUpdateTable() {
     }
 }
 
-
 // Function to update pinned item prices
 function updatePinnedPrices() {
     const pinnedCards = document.querySelectorAll(".card");
@@ -94,6 +93,34 @@ function updatePinnedPrices() {
     });
 }
 
+function savePinnedItems() {
+    const pinnedData = [];
+
+    document.querySelectorAll(".card").forEach((card) => {
+        const name = card.dataset.name;
+        const category = card.dataset.category;
+        const price = card.dataset.price;
+        const userPrice = card.querySelector("input").value || "";
+
+        pinnedData.push({ name, category, price, userPrice });
+    });
+
+    localStorage.setItem("pinnedItems", JSON.stringify(pinnedData));
+}
+
+function restorePinnedItems() {
+    const pinnedData = JSON.parse(localStorage.getItem("pinnedItems")) || [];
+
+    pinnedData.forEach((item) => {
+        pinItem(item.name, parseFloat(item.price), item.category);
+
+        // Restore the user's price if it exists
+        const lastCard = document.querySelector(`#${item.category} .cards .card:last-child`);
+        if (lastCard) {
+            lastCard.querySelector("input").value = formatNumber(item.userPrice);
+        }
+    });
+}
 
 // Countdown and refresh logic
 function startCountdown() {
@@ -136,6 +163,14 @@ document.getElementById("search-form").addEventListener("submit", function (even
 
 // Function to pin an item to the selected category
 function pinItem(name, price, category) {
+    const parentContainer = document.querySelector(`#${category} .cards`);
+    const placeholder = parentContainer.querySelector('.placeholder');
+
+    // Hide the placeholder when adding the first real card
+    if (placeholder) {
+        placeholder.style.display = 'none';
+    }
+
     const card = document.createElement("div");
     card.classList.add("card");
     card.dataset.name = name; // Store item name for updates
@@ -152,57 +187,66 @@ function pinItem(name, price, category) {
         </div>
     `;
 
-    const parentContainer = document.querySelector(`#${category} .cards`);
     parentContainer.appendChild(card);
 
-    // Attach event listener to format input value dynamically
+    // Add event listeners
     const priceInput = card.querySelector("input");
     priceInput.addEventListener("input", function () {
-        this.value = formatNumber(this.value);
+        this.value = formatNumber(this.value); // Format input dynamically
+        savePinnedItems(); // Save changes to localStorage
     });
 
-    // Add functionality to move the card
+    // Move button functionality
     card.querySelector(".move-btn").addEventListener("click", () => {
         const newCategory = category === "buy-orders" ? "sell-offers" : "buy-orders";
         parentContainer.removeChild(card); // Remove from current category
         pinItem(name, price, newCategory); // Add to the other category
     });
 
-    // Add functionality to delete the card
+    // Delete button functionality
     card.querySelector(".delete-btn").addEventListener("click", () => {
         parentContainer.removeChild(card);
+
+        // Show placeholder if no cards remain
+        if (!parentContainer.querySelector('.card:not(.placeholder)')) {
+            placeholder.style.display = 'block';
+        }
+
+        savePinnedItems(); // Update localStorage when a pin is removed
     });
 
-    // Check for price conditions every second
-    setInterval(() => checkPrice(card), 1000);
+    // Save pinned items to localStorage after adding
+    savePinnedItems();
 }
-
 
 
 // Function to check price and flash if conditions are met
 function checkPrice(card) {
     const category = card.dataset.category;
-    const userPriceInput = card.querySelector("input").value.replace(/,/g, ""); // Get raw user input
+    const userPriceInput = card.querySelector("input").value.replace(/,/g, "");
     const userPrice = parseFloat(userPriceInput);
 
-    // If no valid number is entered, skip the flashing check
     if (isNaN(userPrice) || userPrice === 0) {
         return;
     }
 
     const currentPriceElement = card.querySelector(".current-price");
-    const currentPriceText = currentPriceElement.textContent;
-    const currentPrice = parseFloat(currentPriceText.replace(/[^\d]/g, "")) || 0;
+    const currentPriceText = currentPriceElement.textContent.match(/\d+/g);
+    const currentPrice = parseFloat(currentPriceText?.join("") || "0");
 
-    // Conditions for flashing
     const flashCondition =
-        (category === "buy-orders" && userPrice < currentPrice) || // For Buy Orders: Your Price < Highest Buy Price
-        (category === "sell-offers" && userPrice > currentPrice); // For Sell Offers: Your Price > Lowest Sell Price
+        (category === "buy-orders" && userPrice < currentPrice) ||
+        (category === "sell-offers" && userPrice > currentPrice);
 
     if (flashCondition) {
-        card.classList.add("flash"); // Add flash class for animation
-        setTimeout(() => card.classList.remove("flash"), 500); // Remove flash after animation
+        card.classList.add("flash");
+
+        // Remove and re-add flash to repeat animation
+        setTimeout(() => card.classList.remove("flash"), 1000); // Matches 1s animation
     }
+
+    // Re-check condition every 2 seconds if needed
+    setTimeout(() => checkPrice(card), 2000);
 }
 
 
@@ -218,7 +262,6 @@ function formatItemName(name) {
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
 }
-
 
 // Populate suggestions and map table data
 async function populateTable() {
@@ -272,12 +315,6 @@ async function populateTable() {
     }
 }
 
-// Initial data fetch and countdown start
-fetchAndUpdateTable();
-startCountdown();
-populateTable();
-
-// Theme toggle functionality
 document.addEventListener("DOMContentLoaded", () => {
     const themeToggle = document.getElementById("theme-toggle");
     const currentTheme = localStorage.getItem("theme") || "light";
@@ -285,11 +322,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Apply the current theme
     document.documentElement.setAttribute("data-theme", currentTheme);
 
-    // Add click listener to toggle the theme
     themeToggle.addEventListener("click", () => {
         const newTheme = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
         document.documentElement.setAttribute("data-theme", newTheme);
-        localStorage.setItem("theme", newTheme); // Save the theme preference
+        localStorage.setItem("theme", newTheme);
     });
-});
 
+    // Restore pinned items
+    restorePinnedItems();
+    fetchAndUpdateTable();
+    startCountdown();
+    populateTable();
+});
